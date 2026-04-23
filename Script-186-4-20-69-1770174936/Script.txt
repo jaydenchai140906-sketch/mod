@@ -1,10 +1,9 @@
 local UEHelpers = require("UEHelpers")
-
 -- ===== CONFIG =====
-local DESIRED_WEIGHT = 999999999.0
-local DESIRED_HEIGHT = 9.0
-local DESIRED_SKILL  = 10.0
-local DESIRED_FUNDS  = 50000000000000
+local DESIRED_WEIGHT = 5.7
+local DESIRED_HEIGHT = 5.0
+local DESIRED_SKILL  = 0.0
+local DESIRED_FUNDS  = 50000
 
 -- Minimal burst to survive cache rebuilds + post-fight clamps (no Tick).
 local BURST_MS = { 0, 700, 1800 }
