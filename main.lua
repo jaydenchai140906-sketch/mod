@@ -413,7 +413,7 @@ local function SpawnNakedZombie()
     print("[HSZ] Naked zombie spawned")
 end
 
-RegisterKeyBind(SPAWN_NAKED_KEY, {c}, function()
+RegisterKeyBind(SPAWN_NAKED_KEY, {r}, function()
     ExecuteInGameThread(SpawnNakedZombie)
 end)
 
