@@ -1,8 +1,8 @@
 local UEHelpers = require("UEHelpers")
 
 -- ===== CONFIG =====
-local DESIRED_WEIGHT = 9999999999999.0
-local DESIRED_HEIGHT = 8.0
+local DESIRED_WEIGHT = 999999999.0
+local DESIRED_HEIGHT = 9.0
 local DESIRED_SKILL  = 10.0
 local DESIRED_FUNDS  = 50000000000000
 
