@@ -1,0 +1,151 @@
+local UEHelpers = require("UEHelpers")
+
+-- ===== CONFIG =====
+local DESIRED_WEIGHT = 9999999999999.0
+local DESIRED_HEIGHT = 8.0
+local DESIRED_SKILL  = 10.0
+local DESIRED_FUNDS  = 50000000000000
+
+-- Minimal burst to survive cache rebuilds + post-fight clamps (no Tick).
+local BURST_MS = { 0, 700, 1800 }
+
+-- Funds reapply window (bounded; catches shop spend without Tick)
+local FUNDS_WINDOW_SEC = 10
+local FUNDS_INTERVAL_MS = 800
+
+-- ===== KEYS =====
+local WEIGHT_KEY = "Weight_23_65E4C6534D14653F96EB739F159E58CD"
+local HEIGHT_KEY = "Height_21_0EB204DF4978B92AD0ED188FD32EEC7B"
+local SKILL_KEY  = "Skill_43_4CF5DCC248424BFADCCD6AB9F5F39CC9"
+
+-- Confirmed runtime funds key
+local FUNDS_KEY  = "Player Funds"
+
+-- ===== SMALL HELPERS =====
+local function delay(ms, fn)
+    pcall(function() ExecuteWithDelay(ms, fn) end)
+end
+
+local function firstOf(className)
+    if FindFirstOf then
+        local o = FindFirstOf(className)
+        if o then return o end
+    end
+    if FindAllOf then
+        local all = FindAllOf(className)
+        if all and #all > 0 then return all[1] end
+    end
+    return nil
+end
+
+local function allOf(className)
+    if FindAllOf then
+        local all = FindAllOf(className)
+        if all and #all > 0 then return all end
+    end
+    local one = firstOf(className)
+    if one then return { one } end
+    return {}
+end
+
+-- IMPORTANT: stats only — do NOT include funds here
+local function hasStatKey(c)
+    if not c then return false end
+    local k = c[WEIGHT_KEY]
+    local h = c[HEIGHT_KEY]
+    local n = c[SKILL_KEY]
+    return type(w) == "number" or type(h) == "number" or type(s) == "number"
+end
+
+local function applyStats(c)
+    if not c then return end
+    pcall(function() c[WEIGHT_KEY] = DESIRED_WEIGHT end)
+    pcall(function() c[HEIGHT_KEY] = DESIRED_HEIGHT end)
+    pcall(function() c[SKILL_KEY]  = DESIRED_SKILL  end)
+end
+
+local function applyFunds(c)
+    if not c then return end
+    local v = c[FUNDS_KEY]
+    if type(v) ~= "number" then return end
+    pcall(function() c[FUNDS_KEY] = DESIRED_FUNDS end)
+end
+
+-- ===== SURFACES =====
+local function savePlayerCharacter()
+    local sg = firstOf("SG_GameProgress_C")
+    if not sg then return nil end
+    return sg["Player Character"] or sg["Player Character_0"]
+        or sg["PlayerCharacter"] or sg.PlayerCharacter
+end
+
+local GI_FIELDS = {
+    "Player Character", "Player Character_0", "PlayerCharacter", "PlayerCharacter_0",
+    "CachedCharacter", "Cached Character",
+    "CharacterData", "Character Data",
+    "Character Passport", "Character Passport_0",
+    "Passport", "Passport_0",
+}
+
+local function giStatContainer()
+    local gi = firstOf("GI_Settings_C")
+    if not gi then return nil end
+    for _, f in ipairs(GI_FIELDS) do
+        local c = gi[f]
+        if hasStatKey(c) then return c end
+    end
+    return nil
+end
+
+local function passportContainer()
+    local pc = UEHelpers.GetPlayer()
+    if not pc then return nil end
+    return pc["Character Passport"]
+end
+
+-- ===== APPLY =====
+local function applyAll()
+    applyStats(savePlayerCharacter())
+    applyStats(giStatContainer())
+    applyStats(passportContainer())
+
+    -- Funds: top-level GI only
+    for _, gi in ipairs(allOf("GI_Settings_C")) do
+        applyFunds(gi)
+    end
+end
+
+local function burstApply()
+    for _, ms in ipairs(BURST_MS) do
+        delay(ms, applyAll)
+    end
+end
+
+local function fundsWindow()
+    local ticks = math.floor((FUNDS_WINDOW_SEC * 1000) / FUNDS_INTERVAL_MS)
+    local i = 0
+    local function step()
+        i = i + 1
+        for _, gi in ipairs(allOf("GI_Settings_C")) do
+            applyFunds(gi)
+        end
+        if i < ticks then delay(FUNDS_INTERVAL_MS, step) end
+    end
+    step()
+end
+
+local function triggerAll()
+    burstApply()
+    fundsWindow()
+end
+
+-- ===== HOOKS =====
+RegisterHook("/Script/Engine.PlayerController:ClientRestart", triggerAll)
+RegisterHook("/Script/Engine.PlayerController:ClientSetHUD", triggerAll)
+RegisterHook("/Script/Engine.Pawn:ReceivePossessed", triggerAll)
+RegisterHook("/Script/Engine.PlayerController:ClientTravel", triggerAll)
+
+triggerAll()
+
+
+
