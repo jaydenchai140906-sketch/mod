@@ -8,15 +8,15 @@ local UEHelpers = require("UEHelpers")
 --  CONFIG
 -- ============================================================
 
-local cfg = { zombify_key = "1", spawn_key = "h", spawn_naked_key = "k", spawn_count = 2 }
+local cfg = { zombify_key = "1", spawn_key = "h", spawn_naked_key = "k", spawn_count = 1 }
 pcall(function()
     local loaded = require("config")
     if type(loaded) == "table" then
-        for k, v in pairs(loaded) do cfg[k] = v end
+        for x, v in pairs(loaded) do cfg[x] = v end
     end
 end)
 
-local ZOMBIFY_KEY     = Key[cfg.zombify_key]     or Key.o
+local ZOMBIFY_KEY     = Key[cfg.zombify_key]     or Key.g
 local SPAWN_KEY       = Key[cfg.spawn_key]       or Key.h
 local SPAWN_NAKED_KEY = Key[cfg.spawn_naked_key] or Key.k
 
@@ -413,7 +413,7 @@ local function SpawnNakedZombie()
     print("[HSZ] Naked zombie spawned")
 end
 
-RegisterKeyBind(SPAWN_NAKED_KEY, {r}, function()
+RegisterKeyBind(SPAWN_NAKED_KEY, {k}, function()
     ExecuteInGameThread(SpawnNakedZombie)
 end)
 
